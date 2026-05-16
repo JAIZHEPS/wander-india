@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { MapPin, Eye, EyeOff, AlertCircle, Plane } from "lucide-react";
+import { MapPin, Eye, EyeOff, AlertCircle, Plane, CheckCircle2 } from "lucide-react";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -22,9 +22,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Read ?email= from URL (set when redirected from register for duplicate email)
+  const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+  const prefillEmail = params.get("email") || "";
+  const redirectedFromRegister = !!prefillEmail;
+
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: prefillEmail, password: "" },
   });
 
   const onSubmit = async (data: FormData) => {
@@ -102,6 +107,23 @@ export default function LoginPage() {
 
           <h1 className="text-3xl font-black text-white mb-2">Welcome back</h1>
           <p className="text-muted-foreground mb-8">Sign in to continue your adventure</p>
+
+          {/* Redirected from register — account exists banner */}
+          {redirectedFromRegister && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-start gap-3 p-4 mb-6 rounded-xl bg-green-500/10 border border-green-500/30"
+            >
+              <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-green-400 font-semibold text-sm">Account found!</p>
+                <p className="text-white/60 text-sm mt-0.5">
+                  Your email is pre-filled — just enter your password to sign in.
+                </p>
+              </div>
+            </motion.div>
+          )}
 
           {error && (
             <motion.div
