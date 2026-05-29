@@ -28,6 +28,9 @@ import FeaturesPage from "@/pages/features";
 import ReelsPage from "@/pages/reels";
 import HotelsPage from "@/pages/hotels";
 import RestaurantsPage from "@/pages/restaurants";
+import GroupPlannerPage from "@/pages/group-planner";
+import TravelHistoryPage from "@/pages/travel-history";
+import FAQPage from "@/pages/faq";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -72,6 +75,9 @@ function Router() {
       <Route path="/reels" component={ReelsPage} />
       <Route path="/hotels" component={HotelsPage} />
       <Route path="/restaurants" component={RestaurantsPage} />
+      <Route path="/group-planner" component={GroupPlannerPage} />
+      <Route path="/travel-history" component={TravelHistoryPage} />
+      <Route path="/faq" component={FAQPage} />
       <Route component={NotFound} />
     </Switch>
   );
