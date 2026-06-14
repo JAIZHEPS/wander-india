@@ -13,6 +13,7 @@ interface Reel {
   destination: string;
   state: string;
   image: string;
+  video: string;
   description: string;
   hashtags: string[];
   views: string;
@@ -30,6 +31,7 @@ const REELS: Reel[] = [
     destination: "Goa",
     state: "Goa",
     image: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=720&h=1280&fit=crop",
+    video: "https://assets.mixkit.co/videos/preview/mixkit-beautiful-aerial-shot-of-the-beach-and-sea-42095-large.mp4",
     description: "Golden hour at Palolem Beach — where the Arabian Sea meets paradise. Watch the sun dissolve into amber and violet hues over India's most iconic coastline.",
     hashtags: ["GoaBeach", "SunsetVibes", "BeachLife", "IncredibleIndia"],
     views: "2.4M",
@@ -45,6 +47,7 @@ const REELS: Reel[] = [
     destination: "Ladakh",
     state: "Ladakh",
     image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=720&h=1280&fit=crop",
+    video: "https://assets.mixkit.co/videos/preview/mixkit-snowy-mountain-peak-under-blue-sky-42861-large.mp4",
     description: "Pangong Lake glimmering at 14,000 ft above sea level. The crystal blue water changes colours with the sky — a surreal experience unlike anywhere on Earth.",
     hashtags: ["Ladakh", "PangongLake", "HimalayanVibes", "RoofOfWorld"],
     views: "5.1M",
@@ -60,6 +63,7 @@ const REELS: Reel[] = [
     destination: "Rajasthan",
     state: "Rajasthan",
     image: "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=720&h=1280&fit=crop",
+    video: "https://assets.mixkit.co/videos/preview/mixkit-taj-mahal-in-india-under-a-clear-sky-41484-large.mp4",
     description: "The golden city of Jaisalmer rises from the Thar Desert like a sand castle for kings. Every narrow lane whispers stories of Rajput glory and desert romance.",
     hashtags: ["Rajasthan", "Jaisalmer", "DesertVibes", "GoldenCity"],
     views: "3.8M",
@@ -75,6 +79,7 @@ const REELS: Reel[] = [
     destination: "Kerala",
     state: "Kerala",
     image: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=720&h=1280&fit=crop",
+    video: "https://assets.mixkit.co/videos/preview/mixkit-sun-shining-through-palm-trees-42211-large.mp4",
     description: "A lazy afternoon drifting through the Alleppey backwaters on a houseboat. Kerala's 900 km of serene waterways weave through coconut groves and emerald paddy fields.",
     hashtags: ["Kerala", "Backwaters", "GodsOwnCountry", "HouseboatLife"],
     views: "4.2M",
@@ -90,6 +95,7 @@ const REELS: Reel[] = [
     destination: "Varanasi",
     state: "Uttar Pradesh",
     image: "https://images.unsplash.com/photo-1561361058-c24cecae35ca?w=720&h=1280&fit=crop",
+    video: "https://assets.mixkit.co/videos/preview/mixkit-sunset-over-the-ocean-41846-large.mp4",
     description: "The Ganga Aarti at Dashashwamedh Ghat — a thousand flames dancing in the sacred dark. Varanasi doesn't just show you India; it shows you eternity.",
     hashtags: ["Varanasi", "GangaAarti", "SpiritualIndia", "Banaras"],
     views: "6.7M",
@@ -105,6 +111,7 @@ const REELS: Reel[] = [
     destination: "Manali",
     state: "Himachal Pradesh",
     image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=720&h=1280&fit=crop",
+    video: "https://assets.mixkit.co/videos/preview/mixkit-snowy-mountain-peak-under-blue-sky-42861-large.mp4",
     description: "Fresh snowfall blankets the Solang Valley — Manali transforms into a winter wonderland. Wake up to peaks so close you could almost reach out and touch them.",
     hashtags: ["Manali", "SnowVibes", "Himalaya", "WinterTravel"],
     views: "3.3M",
@@ -120,6 +127,7 @@ const REELS: Reel[] = [
     destination: "Rishikesh",
     state: "Uttarakhand",
     image: "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=720&h=1280&fit=crop",
+    video: "https://assets.mixkit.co/videos/preview/mixkit-waterfall-in-forest-2213-large.mp4",
     description: "White water rafting on the Ganga through Rishikesh — the yoga capital of the world meets the adventure capital. Sacred vibes meet adrenaline rushes.",
     hashtags: ["Rishikesh", "Rafting", "YogaCapital", "AdventureIndia"],
     views: "2.9M",
@@ -135,6 +143,7 @@ const REELS: Reel[] = [
     destination: "Andaman",
     state: "Andaman & Nicobar",
     image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=720&h=1280&fit=crop",
+    video: "https://assets.mixkit.co/videos/preview/mixkit-beautiful-aerial-shot-of-the-beach-and-sea-42095-large.mp4",
     description: "Radhanagar Beach at sunset — rated Asia's best beach. The turquoise waters meet white sand in a spectacle so perfect it feels computer-generated.",
     hashtags: ["Andaman", "TropicalIndia", "IslandLife", "BeachParadise"],
     views: "4.8M",
@@ -169,8 +178,25 @@ export default function ReelsPage() {
   const [likeBurst, setLikeBurst] = useState(false);
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const reel = REELS[currentIndex];
+
+  useEffect(() => {
+    if (videoRef.current) {
+      if (paused) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play().catch(err => console.log("Play interrupted:", err));
+      }
+    }
+  }, [paused, currentIndex]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = muted;
+    }
+  }, [muted]);
 
   // Auto-advance when not paused
   useEffect(() => {
@@ -241,11 +267,16 @@ export default function ReelsPage() {
               style={{ height: "calc(100vh - 80px)" }}
               onDoubleClick={handleLike}
             >
-              {/* Background Image */}
-              <img
-                src={reel.image}
-                alt={reel.destination}
+              {/* Background Video */}
+              <video
+                ref={videoRef}
+                src={reel.video}
+                poster={reel.image}
                 className="absolute inset-0 w-full h-full object-cover"
+                playsInline
+                autoPlay
+                muted={muted}
+                loop
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/10 to-black/40" />
 

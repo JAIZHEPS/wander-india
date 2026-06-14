@@ -264,7 +264,7 @@ interface BookingState {
   checkIn: string;
   checkOut: string;
   guests: number;
-  step: "room" | "details" | "confirm";
+  step: "room" | "details" | "payment" | "confirm";
 }
 
 function getNights(checkIn: string, checkOut: string): number {
@@ -294,6 +294,15 @@ export default function HotelsPage() {
   const [confirmed, setConfirmed] = useState<Hotel | null>(null);
   const [imgIndexes, setImgIndexes] = useState<Record<number, number>>({});
 
+  // Payment states
+  const [payMethod, setPayMethod] = useState<"upi" | "card" | "netbanking" | "hotel">("upi");
+  const [upiId, setUpiId] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+  const [selectedBank, setSelectedBank] = useState("sbi");
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
   const filtered = useMemo(() => {
     return HOTELS.filter(h => {
       if (search && !h.name.toLowerCase().includes(search.toLowerCase()) &&
@@ -306,13 +315,23 @@ export default function HotelsPage() {
   }, [search, category, maxPrice, minRating]);
 
   const openBooking = (hotel: Hotel) => {
+    setPayMethod("upi");
+    setUpiId("");
+    setCardNumber("");
+    setCardExpiry("");
+    setCardCvv("");
+    setIsProcessingPayment(false);
     setBooking({ hotel, room: null, checkIn: today(), checkOut: tomorrow(), guests: 2, step: "room" });
   };
 
   const confirmBooking = () => {
     if (!booking) return;
-    setConfirmed(booking.hotel);
-    setBooking(null);
+    setIsProcessingPayment(true);
+    setTimeout(() => {
+      setIsProcessingPayment(false);
+      setConfirmed(booking.hotel);
+      setBooking(null);
+    }, 2000);
   };
 
   const nights = booking ? getNights(booking.checkIn, booking.checkOut) : 1;
@@ -591,18 +610,18 @@ export default function HotelsPage() {
               <div className="p-5">
                 {/* Step Indicators */}
                 <div className="flex items-center gap-2 mb-6">
-                  {["room", "details", "confirm"].map((step, i) => (
+                  {["room", "details", "payment", "confirm"].map((step, i) => (
                     <div key={step} className="flex items-center gap-2">
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                         booking.step === step ? "bg-amber-500 text-black" :
-                        (["room", "details", "confirm"].indexOf(booking.step) > i) ? "bg-green-500 text-white" : "bg-white/10 text-white/40"
+                        (["room", "details", "payment", "confirm"].indexOf(booking.step) > i) ? "bg-green-500 text-white" : "bg-white/10 text-white/40"
                       }`}>
-                        {(["room", "details", "confirm"].indexOf(booking.step) > i) ? <Check className="w-3.5 h-3.5" /> : i + 1}
+                        {(["room", "details", "payment", "confirm"].indexOf(booking.step) > i) ? <Check className="w-3.5 h-3.5" /> : i + 1}
                       </div>
                       <span className={`text-xs font-medium ${booking.step === step ? "text-white" : "text-white/40"}`}>
-                        {step === "room" ? "Select Room" : step === "details" ? "Your Details" : "Confirm"}
+                        {step === "room" ? "Select Room" : step === "details" ? "Your Details" : step === "payment" ? "Payment" : "Confirm"}
                       </span>
-                      {i < 2 && <div className="w-8 h-px bg-white/10" />}
+                      {i < 3 && <div className="w-8 h-px bg-white/10" />}
                     </div>
                   ))}
                 </div>
@@ -705,14 +724,127 @@ export default function HotelsPage() {
 
                     <div className="flex gap-3">
                       <Button onClick={() => setBooking(b => b ? { ...b, step: "room" } : null)} variant="outline" className="flex-1 border-white/20 text-white rounded-xl h-11">Back</Button>
-                      <Button onClick={() => setBooking(b => b ? { ...b, step: "confirm" } : null)} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-bold border-0 rounded-xl h-11">
+                      <Button onClick={() => setBooking(b => b ? { ...b, step: "payment" } : null)} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-bold border-0 rounded-xl h-11">
                         Confirm →
                       </Button>
                     </div>
                   </div>
                 )}
 
-                {/* Step 3: Confirm */}
+                {/* Step 3: Payment */}
+                {booking.step === "payment" && (
+                  <div className="space-y-4">
+                    <p className="text-white/60 text-sm mb-3">Choose payment method</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { id: "upi", label: "UPI (Paytm/GPay)" },
+                        { id: "card", label: "Credit/Debit Card" },
+                        { id: "netbanking", label: "Net Banking" },
+                        { id: "hotel", label: "Pay at Hotel" },
+                      ].map(method => (
+                        <button
+                          key={method.id}
+                          onClick={() => setPayMethod(method.id as any)}
+                          className={`px-4 py-3 rounded-xl border text-sm font-semibold transition-all text-center ${payMethod === method.id ? "border-amber-500 bg-amber-500/20 text-amber-400" : "border-white/10 text-white/70 hover:border-white/20 hover:bg-white/5"}`}
+                        >
+                          {method.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Method details */}
+                    {payMethod === "upi" && (
+                      <div className="space-y-3 pt-2">
+                        <label className="text-white/60 text-xs font-medium block">UPI ID</label>
+                        <input
+                          type="text"
+                          placeholder="arjun@okaxis"
+                          value={upiId}
+                          onChange={e => setUpiId(e.target.value)}
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50"
+                        />
+                        <p className="text-muted-foreground text-[10px]">A payment request will be sent to this UPI ID.</p>
+                      </div>
+                    )}
+
+                    {payMethod === "card" && (
+                      <div className="space-y-3 pt-2">
+                        <div>
+                          <label className="text-white/60 text-xs font-medium block mb-1">Card Number</label>
+                          <input
+                            type="text"
+                            placeholder="4111 2222 3333 4444"
+                            maxLength={19}
+                            value={cardNumber}
+                            onChange={e => setCardNumber(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-white/60 text-xs font-medium block mb-1">Expiry</label>
+                            <input
+                              type="text"
+                              placeholder="MM/YY"
+                              maxLength={5}
+                              value={cardExpiry}
+                              onChange={e => setCardExpiry(e.target.value)}
+                              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50 text-center"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-white/60 text-xs font-medium block mb-1">CVV</label>
+                            <input
+                              type="password"
+                              placeholder="***"
+                              maxLength={3}
+                              value={cardCvv}
+                              onChange={e => setCardCvv(e.target.value)}
+                              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50 text-center"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {payMethod === "netbanking" && (
+                      <div className="space-y-3 pt-2">
+                        <label className="text-white/60 text-xs font-medium block mb-1">Select Bank</label>
+                        <select
+                          value={selectedBank}
+                          onChange={e => setSelectedBank(e.target.value)}
+                          className="w-full bg-gray-900 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50"
+                        >
+                          <option value="sbi">State Bank of India</option>
+                          <option value="hdfc">HDFC Bank</option>
+                          <option value="icici">ICICI Bank</option>
+                          <option value="axis">Axis Bank</option>
+                          <option value="kotak">Kotak Mahindra Bank</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {payMethod === "hotel" && (
+                      <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3.5 pt-2">
+                        <p className="text-amber-400 font-bold text-xs mb-1">Pay at Hotel</p>
+                        <p className="text-white/70 text-xs leading-relaxed">No payment is required right now. You can settle the bill directly at the hotel desk during check-in or check-out.</p>
+                      </div>
+                    )}
+
+                    <div className="flex gap-3 pt-2">
+                      <Button onClick={() => setBooking(b => b ? { ...b, step: "details" } : null)} variant="outline" className="flex-1 border-white/20 text-white rounded-xl h-11">Back</Button>
+                      <Button
+                        onClick={() => setBooking(b => b ? { ...b, step: "confirm" } : null)}
+                        disabled={(payMethod === "upi" && !upiId) || (payMethod === "card" && (!cardNumber || !cardExpiry || !cardCvv))}
+                        className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-bold border-0 rounded-xl h-11 disabled:opacity-45"
+                      >
+                        Continue →
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 4: Confirm */}
                 {booking.step === "confirm" && (
                   <div className="space-y-4">
                     <div className="bg-white/3 rounded-xl p-4 space-y-3">
@@ -729,6 +861,14 @@ export default function HotelsPage() {
                           <span className="text-white font-medium">{value}</span>
                         </div>
                       ))}
+                      <div className="border-t border-white/10 pt-2 flex justify-between text-sm">
+                        <span className="text-muted-foreground">Payment Method</span>
+                        <span className="text-white font-medium">
+                          {payMethod === "upi" ? `UPI (${upiId})` :
+                           payMethod === "card" ? `Card ending in ${cardNumber.slice(-4) || "****"}` :
+                           payMethod === "netbanking" ? `Net Banking (${selectedBank.toUpperCase()})` : "Pay at Hotel"}
+                        </span>
+                      </div>
                       <div className="border-t border-white/10 pt-2 flex justify-between font-bold">
                         <span className="text-white">Total (incl. taxes)</span>
                         <span className="text-amber-400 text-lg">₹{Math.round(totalPrice * 1.12).toLocaleString("en-IN")}</span>
@@ -736,9 +876,10 @@ export default function HotelsPage() {
                     </div>
                     <p className="text-muted-foreground text-xs text-center">Free cancellation up to 48 hours before check-in. By confirming you agree to our terms.</p>
                     <div className="flex gap-3">
-                      <Button onClick={() => setBooking(b => b ? { ...b, step: "details" } : null)} variant="outline" className="flex-1 border-white/20 text-white rounded-xl h-11">Back</Button>
-                      <Button onClick={confirmBooking} className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold border-0 rounded-xl h-11">
-                        <Check className="w-4 h-4 mr-1" /> Confirm Booking
+                      <Button onClick={() => setBooking(b => b ? { ...b, step: "payment" } : null)} disabled={isProcessingPayment} variant="outline" className="flex-1 border-white/20 text-white rounded-xl h-11">Back</Button>
+                      <Button onClick={confirmBooking} disabled={isProcessingPayment} className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold border-0 rounded-xl h-11">
+                        {isProcessingPayment ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
+                        {isProcessingPayment ? "Processing Payment..." : "Pay & Confirm"}
                       </Button>
                     </div>
                   </div>

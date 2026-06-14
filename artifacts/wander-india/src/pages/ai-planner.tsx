@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useSearch } from "wouter";
-import { useGenerateItinerary, useCreateTrip, getListTripsQueryKey } from "@workspace/api-client-react";
+import { useGenerateItinerary, useCreateTrip, getListTripsQueryKey, listDestinations } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -65,11 +65,30 @@ function PlannerContent() {
     const end = new Date(today);
     end.setDate(end.getDate() + result.days - 1);
 
+    let destinationId = 1;
+    let destinationImage = result.destinationImage || undefined;
+
+    try {
+      const dests = await listDestinations({ search: result.destination });
+      if (dests && dests.length > 0) {
+        const match = dests.find(
+          d => d.name.toLowerCase() === result.destination.toLowerCase()
+        ) || dests[0];
+        destinationId = match.id;
+        if (!destinationImage && match.imageUrl) {
+          destinationImage = match.imageUrl;
+        }
+      }
+    } catch (e) {
+      console.warn("Could not fetch matching destination ID, defaulting to 1", e);
+    }
+
     try {
       await createTripMutation.mutateAsync({
         data: {
-          destinationId: 1,
+          destinationId,
           destinationName: result.destination,
+          destinationImage,
           startDate: today.toISOString().split("T")[0],
           endDate: end.toISOString().split("T")[0],
           totalBudget: vals.budget,
